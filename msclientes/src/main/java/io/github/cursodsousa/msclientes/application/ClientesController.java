@@ -3,19 +3,20 @@ package io.github.cursodsousa.msclientes.application;
 import io.github.cursodsousa.msclientes.application.representation.ClienteSaveRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.util.logging.Logger;
 
 @RestController
 @RequestMapping("clientes")
 @RequiredArgsConstructor
 @Slf4j
 public class ClientesController {
-
     @Autowired      //Não é mais obrigatório, Spring detecta instancia da classe ja realiza a injeção da dependencia
     private final ClienteService _service;
 
