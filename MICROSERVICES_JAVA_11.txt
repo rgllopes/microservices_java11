@@ -1,0 +1,220 @@
+### MICROSERVICE E MENSAGERIA COM SPRING BOOT CLOUD E DOCKER ###
+
+1)	DISCOVERY SERVER EUREKA
+
+	a.	Criar projeto em Spring Initializr https://start.spring.io/ e adicionar as dependências:
+		i.	Eureka Server
+		ii.	Spring Security
+
+	b.	Em src/main/java/EurekaserverApplication adicionar a annotation
+		i.	@EnableEurekaServer;
+
+	c.	Em src/main/Resources alterar a extensão para application.yml e configura-lo
+
+2)	GATEWAY
+
+	a.	Criar projeto em Spring Initializr https://start.spring.io/ e adicionar as dependências:
+		i.	Eureka Discovery Client
+		ii.	OAuth2 Resource Server
+
+	b.	Configurar o arquivo pom.xml
+		i.	Adicionar <dependencyManagement>
+		ii.	Alterar <dependency> spring-boot-starter-webflux
+		iii.	Adicionar <dependency>org.springframework.cloud => spring-cloud-starter-gateway
+		iv.	Adicionar <dependency>spring-cloud-starter-netflix-eureka-client
+
+	c.	Em src/main/Resources alterar a extensão para application.yml e configura-lo
+
+	d.	Em src/main/java/MscloudgatewayApplication adicionar a annotation
+		i.	@EnableEurekaClient
+		ii.	@EnableDiscoveryClient;
+
+	e.	Criar em src/main/java/MscloudgatewayApplication:
+		i.	 Função RouteLocator routes(RouteLocatorBuilder builder)
+		ii.	Adicionar a annotation @Bean
+		iii.	Referenciar as rotas dos microserviços
+
+3)	MICROSERVICE Clientes
+
+	a.	Criar projeto em Spring Initializr https://start.spring.io/ e adicionar as dependências:
+		i.	Spring WEB
+		ii.	Spring Data JPA
+		iii.	Lombok
+		iv.	Spring Boot DevTools
+		v.	Spring Boot Actuator
+		vi.	H2 Database
+		vii.	Eureka Discovery Client
+
+	b.	Configurar o arquivo pom.xml
+
+	c.	Em src/main/Resources alterar a extensão para application.yml e configura-lo
+
+	d.	Em src/main/java/EurekaserverApplication adicionar a annotation
+		i.	@EnableEurekaClient;
+
+	e.	Criar no pacote raiz => domain.Cliente
+
+	f.	Criar no pacote raiz => infra.repository.IClienteRepository
+
+	g.	Criar no pacote application => ClienteService
+
+	h.	Criar no pacote raiz => application.ClienteResource ou ClienteController
+
+	i.	Criar no pacote application => representation.ClienteSaveRequest ou dto.ClienteSaveRequest
+
+	j.	Realizar o registro da rota no microservice GATEWAY
+
+	4)	MICROSERVICE Cartoes
+
+	a.	Criar projeto em Spring Initializr https://start.spring.io/ e adicionar as dependências:
+		i.	Spring WEB
+		ii.	Spring Data JPA
+		iii.	Lombok
+		iv.	Spring Boot DevTools
+		v.	Spring Boot Actuator
+		vi.	H2 Database
+		vii.	Eureka Discovery Client
+		viii.	Spring for RabbitMQ
+
+	b.	Configurar o arquivo pom.xml
+
+	c.	Em src/main/Resources alterar a extensão para application.yml e configura-lo
+
+	d.	Em src/main/java/MscartoesApplication adicionar a annotation
+		i.	@EnableEurekaClient;
+
+	e.	Criar no pacote raiz => domain.Cartao
+
+	f.	Criar no pacote raiz domain => BandeiraCartao
+
+	g.	Criar no pacote raiz => infra.repository.ICartaoRepository
+
+	h.	Criar no pacote application => CartaoService
+
+	i.	Criar no pacote raiz => application.CartoesResource ou CartoesController
+
+	j.	Criar no pacote application => representation.CartaoSaveRequest ou dto.CartaoSaveRequest
+
+	k.	Realizar o registro da rota no microservice GATEWAY
+
+5)	MICROSERVICE AvaliadorCredito
+
+	a.	Criar projeto em Spring Initializr https://start.spring.io/ e adicionar as dependências:
+		i.	Spring WEB
+		ii.	Spring Data JPA
+		iii.	Lombok
+		iv.	Spring Boot DevTools
+		v.	Spring Boot Actuator
+		vi.	Eureka Discovery Client
+		vii.	OpenFeign
+		viii.	Spring for RabbitMQ
+
+	b.	Configurar o arquivo pom.xml
+
+	c.	Em src/main/Resources alterar a extensão para application.yml e configura-lo
+
+	d.	Em src/main/java/MscartoesApplication adicionar a annotation
+		i.	@EnableEurekaClient;
+		ii.	@EnableFeignClients
+
+	e.	Criar no pacote raiz => domain.SituacaoCliente
+
+	f.	Criar no pacote domain => DadosCliente
+
+	g.	Criar no pacote domain => CartaoCliente
+
+	h.	Criar no pacote application => AvaliadorCreditoService
+
+	i.	Criar no pacote raiz => infra.clients.ClienteResourceClient
+
+	j.	Criar no pacote raiz => application.AvaliadorCreditoController
+
+	k.	Realizar o registro da rota no microservice GATEWAY
+
+6)	MENSAGERIA RabbitMQ(Broker) COM DOCKER
+
+	a)	Broker -> recebe uma mensagem via AMQP() e envia para um Exchange
+
+	b)	Exchange -> recebe as mensagens e encaminha de acordo com os bindings(conexões) e os tipos declarados de Exchange
+		a.	Exchange Default -> recebe a solicitação de mensagem e encaminha para a fila
+		b.	 Exchange direct -> 
+		c.	Exchange fanout -> 
+		d.	Exchange topic ->
+		e.	Exchange headers -> 
+
+	c)	Instalação RabbitMQ com Docker
+		a.	CLI -> docker run -it --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3.11-management
+		b.	Localhost:15672	-> user: guest - pwd: guest
+		c.	Na aba Queues -< Add queue 
+			i.	Name: emissão-cartoes
+
+	d)	No mscartoes -> application.yml 	
+		referenciar a fila do RabbitMQ emissão-cartoes em mq:
+			i.	queues:
+				1.	emissão-cartoes: emissão-cartoes
+		referenciar em spring:
+			i.	 rabbitmq: 
+				1.	host: localhost
+				2.	port: 5672
+				3.	username: guest
+				4.	password: guest
+	e)	No mscartoes -> MscartoesApplication -> Annotation @EnableRabbit
+	f)	No mscartoes -> adicionar a classe infra.mqueue.EmissaoCartaoSubscriber
+	g)	Run nos projetos eureca/gateway/cartões
+	h)	Para testar o RabbitMQ => Queues->emissão-cartoes->Publish message->Payload->Publish message
+	i)	No msavaliadordecredito, repetir passos d, e
+	j)	No msavaliadordecredito-> adicionar a classe domain.model.mqueue.SolicitacaoEmissaoCartaoPublisher
+	k)	No msavaliadordecredito-> adicionar a classe infra.mqueue.DadosSolicitacaoEmissaoCartao
+	l)	No msavaliadordecredito-> adicionar a classe config.MQConfig
+	m)	No msavaliadordecredito->adicionar a classe domain.model.ProtocoloSolicitacaoCartao
+	n)	No msavaliadordecredito->adicionar a classe application.ex.ErroSolicitacaoCartaoException
+
+7)	SEGURANÇA COM KEYCLOAK
+	a)	Instalação com Docker
+		CLI => docker run --name keycloak  -p 8081:8080 -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=admin quay.io/keycloak/keycloak:20.0.3 start-dev
+	b)	Para acessar: localhost:8081
+	c)	Administration Console => user: admin pwd: admin
+	d)	Create Realm
+	e)	Users -> Create new user -> configurar novo usuario
+	f)	No mscloudgateway -> application.yml
+		a.	Copier o endpoint da pagina do keycloak -> Realm settings->EndPoints-> copier a url de issuer na página que será aberta no navegador
+		b.	Adicionar security e colar em issuer-uri a url copiada do keycloak
+	g)	Para testar-> no Insomnia, nova requisição->Authentication->OAuth2
+		a.	Enable
+		b.	Grant type -> url do keycloak => token_endpoint
+		c.	Client ID->Client ID do Client em Keycloak
+		d.	Client Secret->Keycloak-> Clients-> escolher o cliente->Credentials-> copiar Client secret
+		e.	Fetch Tokens-> vai receber o token->Copiar
+		f.	Em Clientes->Salvar->Barer Token
+	h)	Actuator, métricas e arquivo de log
+		a.	Em msclientes-> apllication.yml-> adicionar:
+			management:
+			 endpoints:
+				web:
+				  exposure:
+					include: '*'
+			logging:
+			  file:
+				name: ./logs/log-file.log
+	i)	Documentação da API
+		a.	Adicionar dependency de https://springdoc.org/
+			i.	Acessar no microserviço em eureca -> localhost:XXXXX/Swagger-ui/index.html
+8)	DOCKER
+	a.	Build do projeto
+		i.	CLI -> ./mvnw clean package -DskipTests
+		ii.	CLI-> cd target -> ls -> java -jar .\nome.jar => para rodar o projeto
+		iii.	CLI -> ctrl+C => para a aplicação
+	b.	Na raiz do projeto criar um arquivo chamado Dockerfile
+
+	c.	CLI => docker build --tag cursoms-eureka .
+	d.	CLI => docker run --name nome_container -p 8761:8761 nome_imagem => criar e rodar o container
+	e.	CLI => docker container stop nome_container
+	f.	CLI => docker run nome_container => voltar a rodar o container ja criado
+	g.	CLI => docker container rm nome_container => remove o container
+	h.	CLI => docker image rm nome_image => deleta a imagem
+	i.	CLI => docker images => lista as imagens disponíveis
+	j.	CLI => docker build --tag cursoms-eureka .
+	k.	CLI => docker network create nome_network => cria uma nova network
+	l.	CLI => docker network ls => visualiza as networks disponíveis
+	m.	CLI => docker run --name eureka -p 8761:8761 --network cursoms-network cursoms-eureka
+	n.	CLI => docker run --name cursoms-cartoes --network cursoms-network cursoms-cartoes
